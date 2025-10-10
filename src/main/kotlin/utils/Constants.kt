@@ -20,7 +20,16 @@ object Constants {
     val MAX_POOL_SIZE: Int = dotenv["MAX_POOL_SIZE"].toInt()
     val DATABASE_NAME: String = dotenv["MONGO_DB"]
     val AUTH_COLLECTION: String = dotenv["MONGO_AUTH_COLLECTION"]
-    val AVIS_COLLECTION: String = dotenv["MONGO_AVIS_COLLECTION"]
+    //val AVIS_COLLECTION: String = dotenv["MONGO_AVIS_COLLECTION"]
+
+
+    object Regex {
+        val REGEX_EMAIL = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex()
+        val REGEX_PHONE = "^[2,6]{1}[2,3,5,6,7,8,9]{1}[0-9]{7}\$".toRegex()
+        // Regex pour validation mot de passe (au moins 8 caractères, une majuscule, une minuscule, un chiffre)
+//        val REGEX_PASSWORD = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}\$".toRegex()
+        val REGEX_PASSWORD = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$".toRegex()
+    }
 
     object Hash {
         //        val SALT_LENGTH: Int = System.getenv("SALT_LENGTH").toInt()

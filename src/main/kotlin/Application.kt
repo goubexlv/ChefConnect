@@ -1,7 +1,6 @@
 package cm.daccvo
 
 import cm.daccvo.plugins.configureAdministration
-import cm.daccvo.plugins.configureDatabases
 import cm.daccvo.plugins.configureFrameworks
 import cm.daccvo.plugins.configureHTTP
 import cm.daccvo.plugins.configureMonitoring
@@ -18,7 +17,6 @@ fun Application.module() {
     configureAdministration()
     configureFrameworks()
     configureSerialization()
-    configureDatabases()
     configureMonitoring()
     configureSecurity()
     configureHTTP()
