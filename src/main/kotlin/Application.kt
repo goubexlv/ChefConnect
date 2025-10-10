@@ -1,0 +1,26 @@
+package cm.daccvo
+
+import cm.daccvo.plugins.configureAdministration
+import cm.daccvo.plugins.configureDatabases
+import cm.daccvo.plugins.configureFrameworks
+import cm.daccvo.plugins.configureHTTP
+import cm.daccvo.plugins.configureMonitoring
+import cm.daccvo.plugins.configureRouting
+import cm.daccvo.plugins.configureSecurity
+import cm.daccvo.plugins.configureSerialization
+import io.ktor.server.application.*
+
+fun main(args: Array<String>) {
+    io.ktor.server.netty.EngineMain.main(args)
+}
+
+fun Application.module() {
+    configureAdministration()
+    configureFrameworks()
+    configureSerialization()
+    configureDatabases()
+    configureMonitoring()
+    configureSecurity()
+    configureHTTP()
+    configureRouting()
+}
