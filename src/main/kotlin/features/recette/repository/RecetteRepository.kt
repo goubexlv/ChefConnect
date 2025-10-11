@@ -2,10 +2,15 @@ package cm.daccvo.features.recette.repository
 
 import cm.daccvo.domain.dto.ChefConnectResponse
 import cm.daccvo.domain.dto.recette.RecetteRequest
+import cm.daccvo.domain.recette.Recette
 
 interface RecetteRepository {
 
-    suspend fun createRecette(recette : RecetteRequest):ChefConnectResponse
+    suspend fun createRecette(recette : RecetteRequest) : ChefConnectResponse
 
-    suspend fun updateRecette(uuid: String, recette: RecetteRequest):ChefConnectResponse
+    suspend fun updateRecette(uuid: String, recette: RecetteRequest) : ChefConnectResponse
+
+    suspend fun deleteRecette(uuid: String) : ChefConnectResponse
+
+    suspend fun consultationRecette(uuid: String) : Recette?
 }

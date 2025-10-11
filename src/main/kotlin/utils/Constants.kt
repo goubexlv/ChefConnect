@@ -26,6 +26,10 @@ object Constants {
     val ELASTIC_PORT: Int = dotenv["ELASTIC_PORT"].toInt()
     val ELASTIC_CHUNK: Int = dotenv["ELASTIC_CHUNK"].toInt()
 
+    val REDIS_PORT: Int = dotenv["REDIS_PORT"].toInt()
+    val REDIS_TIME: Long = dotenv["REDIS_TIME"].toLong()
+    val REDIS_HOST: String = dotenv["REDIS_HOST"]
+
 
     object Regex {
         val REGEX_EMAIL = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex()

@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.ElasticsearchException
 import co.elastic.clients.elasticsearch._types.Refresh
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import co.elastic.clients.elasticsearch.core.DeleteResponse
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation
 import java.io.StringReader
 
@@ -181,6 +182,68 @@ class SearchEngine(private val client: ElasticsearchClient) {
             }
         } catch (e: Exception) {
             println("Bulk indexing failed ${e.message}")
+        }
+    }
+
+    fun deleteRecetteByUuid(uuid: String): Boolean {
+        return try {
+            val searchResponse = client.search({
+                it.index(INDEX_NAME)
+                    .query { q ->
+                        q.term { t ->
+                            t.field("uuid").value(uuid)
+                        }
+                    }
+                    .size(1)
+            }, Any::class.java)
+
+            if (searchResponse.hits().hits().isEmpty()) {
+                println("Aucun document trouvé avec uuid $uuid")
+                return false
+            }
+
+            val docId = searchResponse.hits().hits()[0].id()
+            deleteRecetteById(docId)
+        } catch (e: Exception) {
+            println("Erreur lors de la recherche par uuid $uuid erreur : ${e.message}")
+            false
+        }
+    }
+
+    fun deleteRecetteById(id: String): Boolean {
+        return try {
+            val exists = client.exists { e ->
+                e.index(INDEX_NAME).id(id)
+            }
+
+            if (!exists.value()) {
+                println("Tentative de suppression: document $id non trouvé")
+                return false
+            }
+
+            val response: DeleteResponse = client.delete { delete ->
+                delete.index(INDEX_NAME)
+                    .id(id)
+                    .refresh(Refresh.WaitFor)
+            }
+
+            when (response.result().jsonValue()) {
+                "deleted" -> {
+                    println("Document supprimé avec succès")
+                    true
+                }
+                "not_found" -> {
+                    println("Le document n'existait pas")
+                    false
+                }
+                else -> {
+                    println("Statut inattendu: ${response.result()}")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            println("Échec de la suppression du document erreur : ${e.message}")
+            false
         }
     }
 
