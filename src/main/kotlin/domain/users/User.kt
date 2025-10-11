@@ -1,5 +1,6 @@
 package cm.daccvo.domain.users
 
+import cm.daccvo.utils.getTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -18,7 +19,8 @@ data class User(
     val password: String,
     val salt: String,
     val isEmailVerified: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: String = getTime(),
+    val updatedAt: String = getTime(),
 ){
     fun toDocument(): Document = Document.parse(Json.encodeToString(this))
 

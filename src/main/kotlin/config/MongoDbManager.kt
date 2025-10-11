@@ -7,6 +7,7 @@ import cm.daccvo.utils.Constants.MONGO_HOST
 import cm.daccvo.utils.Constants.MONGO_PASSWORD
 import cm.daccvo.utils.Constants.MONGO_PORT
 import cm.daccvo.utils.Constants.MONGO_USER
+import cm.daccvo.utils.Constants.RECETTE_COLLECTION
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
@@ -16,7 +17,7 @@ object MongoDbManager {
 
     private val database: MongoDatabase
     val users: MongoCollection<Document>
-    //private val temporaryCollection: MongoCollection<Document>
+    val recette : MongoCollection<Document>
     //internal val passwordResetTokens: MongoCollection<Document>
 
     init {
@@ -29,6 +30,7 @@ object MongoDbManager {
         val mongoClient = MongoClients.create(uri)
         database = mongoClient.getDatabase(DATABASE_NAME)
         users = database.getCollection(AUTH_COLLECTION)
+        recette = database.getCollection(RECETTE_COLLECTION)
 
     }
 }

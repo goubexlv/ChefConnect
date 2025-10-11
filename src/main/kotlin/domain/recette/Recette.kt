@@ -1,7 +1,11 @@
 package cm.daccvo.domain.recette
 
+import cm.daccvo.domain.users.User
+import cm.daccvo.utils.getTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.bson.Document
 import org.bson.types.ObjectId
 import java.util.UUID
 
@@ -20,5 +24,15 @@ data class Recette(
     val difficulty : Difficulty,
     val ingredients : List<Ingredient>,
     val instruction : String,
+    val createdAt: String = getTime(),
+    val updatedAt: String = getTime(),
+){
+    fun toDocument(): Document = Document.parse(Json.encodeToString(this))
 
-)
+    companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
+        fun fromDocument(document: Document): Recette = json.decodeFromString(document.toJson())
+    }
+}
+

@@ -20,7 +20,7 @@ object Constants {
     val MAX_POOL_SIZE: Int = dotenv["MAX_POOL_SIZE"].toInt()
     val DATABASE_NAME: String = dotenv["MONGO_DB"]
     val AUTH_COLLECTION: String = dotenv["MONGO_AUTH_COLLECTION"]
-    //val AVIS_COLLECTION: String = dotenv["MONGO_AVIS_COLLECTION"]
+    val RECETTE_COLLECTION: String = dotenv["MONGO_RECETTE_COLLECTION"]
 
     val ELASTIC_HOST: String = dotenv["ELASTIC_HOST"]
     val ELASTIC_PORT: Int = dotenv["ELASTIC_PORT"].toInt()
