@@ -30,6 +30,7 @@ class AuthRepositoryImpl : AuthRepository {
 
                 val newUser = User(
                     email = request.email,
+                    userName = request.userName,
                     password = hashedPassword,
                     salt = salt
                 ).toDocument()

@@ -22,6 +22,10 @@ object Constants {
     val AUTH_COLLECTION: String = dotenv["MONGO_AUTH_COLLECTION"]
     //val AVIS_COLLECTION: String = dotenv["MONGO_AVIS_COLLECTION"]
 
+    val ELASTIC_HOST: String = dotenv["ELASTIC_HOST"]
+    val ELASTIC_PORT: Int = dotenv["ELASTIC_PORT"].toInt()
+    val ELASTIC_CHUNK: Int = dotenv["ELASTIC_CHUNK"].toInt()
+
 
     object Regex {
         val REGEX_EMAIL = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex()

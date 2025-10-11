@@ -6,7 +6,9 @@ import kotlinx.serialization.json.Json
 import org.bson.Document
 @Serializable
 data class RegisterRequest(
-    val email : String? = null,
+    val email : String,
+    val userName: String,
+    val avatar : String = "",
     val password : String = "",
     val code : String = "",
     val createdAt: Long = System.currentTimeMillis()

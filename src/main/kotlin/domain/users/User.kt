@@ -12,7 +12,9 @@ data class User(
     @SerialName(value = "_id")
     val id: String = ObjectId().toHexString(),
     val uuid: String = UUID.randomUUID().toString(),
-    val email: String? = null,
+    val userName: String,
+    val email: String,
+    val avatar: String? = null,
     val password: String,
     val salt: String,
     val isEmailVerified: Boolean = false,
