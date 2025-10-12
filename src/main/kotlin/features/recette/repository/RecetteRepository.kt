@@ -2,6 +2,8 @@ package cm.daccvo.features.recette.repository
 
 import cm.daccvo.domain.dto.ChefConnectResponse
 import cm.daccvo.domain.dto.recette.RecetteRequest
+import cm.daccvo.domain.dto.recette.RecettesSearsh
+import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
 
 interface RecetteRepository {
@@ -13,4 +15,6 @@ interface RecetteRepository {
     suspend fun deleteRecette(uuid: String) : ChefConnectResponse
 
     suspend fun consultationRecette(uuid: String) : Recette?
+
+    suspend fun filterSearch(request: SearchRequest) : RecettesSearsh
 }

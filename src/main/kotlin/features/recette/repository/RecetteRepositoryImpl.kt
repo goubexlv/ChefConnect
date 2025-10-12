@@ -3,9 +3,12 @@ package cm.daccvo.features.recette.repository
 import cm.daccvo.config.ElasticsearchManager
 import cm.daccvo.config.MongoDbManager
 import cm.daccvo.config.RedisManager
+import cm.daccvo.config.RedisManager.generateCacheKey
 import cm.daccvo.config.SearchEngine
 import cm.daccvo.domain.dto.ChefConnectResponse
 import cm.daccvo.domain.dto.recette.RecetteRequest
+import cm.daccvo.domain.dto.recette.RecettesSearsh
+import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
 import cm.daccvo.utils.getTime
 import com.mongodb.client.model.Filters.eq
@@ -131,6 +134,22 @@ class RecetteRepositoryImpl : RecetteRepository {
         } catch (e : Exception) {
             null
         }
+    }
+
+    override suspend fun filterSearch(request: SearchRequest): RecettesSearsh {
+        val cacheKey = generateCacheKey(request)
+        val result = redisCache.getFilterSearch(cacheKey)
+        if(result != null){
+            return result
+        } else {
+            // 2. Recherche Elasticsearch
+            val results = searchEngine.searchAdvanced(request)
+            // 3. Mise en cache
+            redisCache.cacheFilterSearch(cacheKey, results, request)
+
+            return results
+        }
+
     }
 
 }

@@ -259,7 +259,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
 
             val suggestions = extractSuggestionsFromResponse(response)
 
-            RecettesSearsh(recettes = results, suggestions = suggestions)
+            RecettesSearsh(recettes = results, suggestions = suggestions, size = request.size, page = request.page)
         } catch (e: Exception) {
             println("Advanced search failed ${e.message}")
             RecettesSearsh(emptyList(), emptyList())
@@ -268,7 +268,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
 
     private fun buildSearchRequestWithSuggestions(request: SearchRequest): co.elastic.clients.elasticsearch.core.SearchRequest {
         val builder = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
-            .index("recettes")
+            .index(INDEX_NAME)
             .query(buildQuery(request))
             .from((request.page - 1) * request.size)
             .size(request.size)

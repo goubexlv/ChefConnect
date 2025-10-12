@@ -6,13 +6,7 @@ val dotenv = dotenv()
 
 object Constants {
 
-    // Variable token JWT
-    val JWT_AUDIENCE: String? = dotenv["JWT_AUDIENCE"]
-    val JWT_DOMAIN: String? = dotenv["JWT_DOMAIN"]
-    val JWT_REALM: String = dotenv["JWT_REALM"]
-    val JWT_ISSUER: String? = dotenv["JWT_ISSUER"]
-    val JWT_SECRET: String? = dotenv["JWT_SECRET"]
-
+    // Mongo
     val MONGO_USER: String = dotenv["MONGO_USER"]
     val MONGO_PASSWORD: String = dotenv["MONGO_PASSWORD"]
     val MONGO_HOST: String = dotenv["MONGO_HOST"]
@@ -21,6 +15,14 @@ object Constants {
     val DATABASE_NAME: String = dotenv["MONGO_DB"]
     val AUTH_COLLECTION: String = dotenv["MONGO_AUTH_COLLECTION"]
     val RECETTE_COLLECTION: String = dotenv["MONGO_RECETTE_COLLECTION"]
+
+    // Variable token JWT
+    val JWT_AUDIENCE: String? = dotenv["JWT_AUDIENCE"]
+    val JWT_DOMAIN: String? = dotenv["JWT_DOMAIN"]
+    val JWT_REALM: String = dotenv["JWT_REALM"]
+    val JWT_ISSUER: String? = dotenv["JWT_ISSUER"]
+    val JWT_SECRET: String? = dotenv["JWT_SECRET"]
+
 
     val ELASTIC_HOST: String = dotenv["ELASTIC_HOST"]
     val ELASTIC_PORT: Int = dotenv["ELASTIC_PORT"].toInt()
