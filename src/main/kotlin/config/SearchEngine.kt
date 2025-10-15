@@ -6,7 +6,9 @@ import cm.daccvo.domain.recette.Recette
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.ElasticsearchException
 import co.elastic.clients.elasticsearch._types.Refresh
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType
 import co.elastic.clients.elasticsearch.core.DeleteResponse
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation
 import java.io.StringReader
@@ -249,7 +251,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
 
     suspend fun searchAdvanced(request: SearchRequest): RecettesSearsh {
         return try {
-            val searchRequest = buildSearchRequestWithSuggestions(request)
+            val searchRequest = filterSearch(request)
             val response = client.search(searchRequest, Recette::class.java)
 
             println("Nombre de résultats trouvés: ${response.hits().total()?.value()}")
@@ -266,7 +268,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
         }
     }
 
-    private fun buildSearchRequestWithSuggestions(request: SearchRequest): co.elastic.clients.elasticsearch.core.SearchRequest {
+    private fun filterSearch(request: SearchRequest): co.elastic.clients.elasticsearch.core.SearchRequest {
         val builder = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
             .index(INDEX_NAME)
             .query(buildQuery(request))
@@ -308,7 +310,6 @@ class SearchEngine(private val client: ElasticsearchClient) {
 
         return builder.build()
     }
-
 
     private fun buildQuery(request: SearchRequest): Query {
         val mustClauses = mutableListOf<Query>()
@@ -369,12 +370,12 @@ class SearchEngine(private val client: ElasticsearchClient) {
         }
     }
 
-
-    private fun extractSuggestionsFromResponse(
+    private suspend fun extractSuggestionsFromResponse(
         response: co.elastic.clients.elasticsearch.core.SearchResponse<Recette>
-    ): List<String> {
+    ): List<Recette> {
         val suggestionTexts = mutableSetOf<String>()
 
+        // 1️⃣ Récupération des textes de suggestion
         response.suggest()?.forEach { (_, suggestList) ->
             suggestList.forEach { suggest ->
                 suggest.completion()?.options()?.forEach { option ->
@@ -383,8 +384,137 @@ class SearchEngine(private val client: ElasticsearchClient) {
             }
         }
 
-        return suggestionTexts.take(10).toList()
+        // 2️⃣ Si aucune suggestion, on renvoie une liste vide
+        if (suggestionTexts.isEmpty()) return emptyList()
+
+        // 3️⃣ Création d'une requête booléenne pour rechercher les recettes correspondantes
+        val shouldQueries = suggestionTexts.map { text ->
+            Query.of { q ->
+                q.multiMatch { mm ->
+                    mm.query(text)
+                        .fields("title^3.0", "ingredients.name^2.0", "description")
+                        .fuzziness("AUTO")
+                }
+            }
+        }
+
+        val query = Query.of { q -> q.bool { b -> b.should(shouldQueries) } }
+
+        // 4️⃣ Recherche des recettes correspondant aux suggestions
+        val searchReq = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
+            .index(INDEX_NAME)
+            .query(query)
+            .size(suggestionTexts.size)
+            .build()
+
+        val resp = client.search(searchReq, Recette::class.java)
+        return resp.hits().hits().mapNotNull { it.source() }.distinctBy { it.id }
     }
+
+
+    suspend fun simpleSearch(request: SearchRequest): RecettesSearsh {
+        return try {
+            val searchRequest = simpleSearchRequest(request)
+            val response = client.search(searchRequest, Recette::class.java)
+
+            println("Nombre de résultats trouvés: ${response.hits().total()?.value()}")
+
+            val results: List<Recette> = response.hits().hits().mapNotNull { it.source() }
+            println("Résultats recettes retournés: ${results.size}")
+
+            val suggestions = extractSuggestionsFromBlurResponse(response, request)
+
+            RecettesSearsh(recettes = results, suggestions = suggestions, size = request.size, page = request.page)
+        } catch (e: Exception) {
+            System.err.println("Simple search failed: ${e.message}")
+            e.printStackTrace()
+            RecettesSearsh(emptyList(), emptyList())
+        }
+    }
+
+    private fun simpleSearchRequest(request: SearchRequest): co.elastic.clients.elasticsearch.core.SearchRequest {
+        return co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
+            .index(INDEX_NAME)
+            .query(buildQueryBlur(request))
+            .from((request.page - 1) * request.size)
+            .size(if (request.size == -1) 1000 else request.size)
+            .suggest { s ->
+                s.suggesters("title_suggest") { suggester ->
+                    suggester.text(request.title)
+                        .completion { c ->
+                            c.field("title_suggest")
+                                .skipDuplicates(true)
+                                .size(5)
+                        }
+                }.suggesters("ingredient_suggest") { suggester ->
+                    suggester.text(request.title)
+                        .completion { c ->
+                            c.field("ingredients.name_suggest")
+                                .skipDuplicates(true)
+                                .size(5)
+                        }
+                }
+            }
+            .build()
+    }
+
+    private suspend fun extractSuggestionsFromBlurResponse(
+        response: co.elastic.clients.elasticsearch.core.SearchResponse<Recette>,
+        request: SearchRequest,
+    ): List<Recette> {
+        val suggestionTexts = mutableSetOf<String>()
+
+        response.suggest()?.forEach { (_, suggestList) ->
+            suggestList.forEach { suggest ->
+                suggest.completion()?.options()?.forEach { option ->
+                    option.text()?.let { suggestionTexts.add(it) }
+                }
+            }
+        }
+
+        return getRecettesFromSuggestions(suggestionTexts.take(5).toList())
+    }
+
+
+    private suspend fun getRecettesFromSuggestions(suggestionTexts: List<String>): List<Recette> {
+        if (suggestionTexts.isEmpty()) return emptyList()
+
+        val shouldQueries = suggestionTexts.map { text ->
+            Query.of { q -> q.matchPhrase { mp -> mp.field("title").query(text) } }
+        }
+
+        val query = Query.of { q -> q.bool { b -> b.should(shouldQueries) } }
+
+        val searchReq = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
+            .index(INDEX_NAME)
+            .query(query)
+            .size(suggestionTexts.size)
+            .build()
+
+        val resp = client.search(searchReq, Recette::class.java)
+        return resp.hits().hits().mapNotNull { it.source() }.distinctBy { it.id }
+    }
+
+    private fun buildQueryBlur(request: SearchRequest): Query {
+        return Query.Builder()
+            .multiMatch { multiMatch ->
+                multiMatch
+                    .query(request.title)
+                    .fields(
+                        listOf(
+                            "title^4.0",
+                            "description^3.0",
+                            "ingredients.name^2.5",
+                            "instruction^1.0"
+                        )
+                    )
+                    .fuzziness("AUTO")
+                    .type(TextQueryType.BestFields)
+                    .operator(Operator.And)
+            }
+            .build()
+    }
+
 
     private fun normalizeSearchTerm(term: String): String =
         term.trim().lowercase()

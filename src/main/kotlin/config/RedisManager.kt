@@ -17,15 +17,13 @@ import java.util.zip.GZIPOutputStream
 object RedisManager {
 
     private const val CACHE_PREFIX = "recette:"
-    private const val VILLE_KEY = "${CACHE_PREFIX}ville:"
-    private const val CATEGORY_KEY = "${CACHE_PREFIX}category:"
-    private const val COMBINED_KEY = "${CACHE_PREFIX}combined:"
     private const val ADVANCED_KEY = "${CACHE_PREFIX}filtersearch:"
-    private const val ADVANCED_BLUR_KEY = "${CACHE_PREFIX}advancedBlur:"
+    private const val ADVANCED_SIMPLE_KEY = "${CACHE_PREFIX}advancedBlur:"
     private const val PARAMS_KEY = "${CACHE_PREFIX}params"
     private val TTL = TimeUnit.HOURS.toSeconds(24) // 24 heures en secondes
 
     private val json = Json { ignoreUnknownKeys = true }
+
 
     private val pool: JedisPool by lazy {
         JedisPool(
@@ -78,8 +76,65 @@ object RedisManager {
         }
     }
 
+    fun cacheSearch(
+        cacheKey: String,
+        results: RecettesSearsh,
+        request: SearchRequest
+    ) {
+        pool.resource.use { jedis ->
+            val normalizedKey = normalizeKey(cacheKey)
+            val advancedKey = "$ADVANCED_SIMPLE_KEY$normalizedKey"
+
+            try {
+                // Sérialisation des résultats
+                val jsonResults = json.encodeToString(results)
+                val dataToStore = if (jsonResults.length > 10_000) {
+                    jsonResults.compress()
+                } else {
+                    jsonResults
+                }
+
+                // Stockage atomique Redis (pipeline = + rapide)
+                jedis.pipelined().use { pipe ->
+                    pipe.setex(advancedKey, TTL, dataToStore)
+                    pipe.hset(PARAMS_KEY, normalizedKey, json.encodeToString(request))
+                    pipe.sync()
+                }
+
+                println("✅ Cached advanced search for key: $cacheKey (${dataToStore.length} chars)")
+            } catch (e: Exception) {
+                System.err.println(
+                    "⚠️ Failed to cache advanced search for key '$cacheKey': ${e.message}"
+                )
+            }
+        }
+    }
+
+
     fun getFilterSearch(cacheKey: String): RecettesSearsh? {
         val key = "${ADVANCED_KEY}${normalizeKey(cacheKey)}"
+
+        return try {
+            pool.resource.use { jedis ->
+                val cachedValue = jedis.get(key) ?: return null
+
+                val jsonData = if (cachedValue.length > 10_000) {
+                    cachedValue.decompress()
+                } else {
+                    cachedValue
+                }
+
+                // Décodage JSON sécurisé
+                return Json.decodeFromString<RecettesSearsh>(jsonData)
+            }
+        } catch (e: Exception) {
+            println("⚠️ Failed to retrieve cached advanced search for key=$cacheKey: ${e.message}")
+            null
+        }
+    }
+
+    fun getSearch(cacheKey: String): RecettesSearsh? {
+        val key = "${ADVANCED_SIMPLE_KEY}${normalizeKey(cacheKey)}"
 
         return try {
             pool.resource.use { jedis ->

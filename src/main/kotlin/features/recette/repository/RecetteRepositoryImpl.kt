@@ -152,4 +152,20 @@ class RecetteRepositoryImpl : RecetteRepository {
 
     }
 
+    override suspend fun SimpleSearch(request: SearchRequest): RecettesSearsh {
+        val cacheKey = generateCacheKey(request)
+        val result = redisCache.getSearch(cacheKey)
+        if(result != null){
+            return result
+        } else {
+            // 2. Recherche Elasticsearch
+            val results = searchEngine.simpleSearch(request)
+            // 3. Mise en cache
+            redisCache.cacheSearch(cacheKey, results, request)
+
+            return results
+        }
+
+    }
+
 }

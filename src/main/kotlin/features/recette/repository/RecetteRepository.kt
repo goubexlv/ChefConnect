@@ -17,4 +17,5 @@ interface RecetteRepository {
     suspend fun consultationRecette(uuid: String) : Recette?
 
     suspend fun filterSearch(request: SearchRequest) : RecettesSearsh
+    suspend fun SimpleSearch(request: SearchRequest) : RecettesSearsh
 }
