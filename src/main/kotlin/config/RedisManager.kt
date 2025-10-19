@@ -9,6 +9,7 @@ import cm.daccvo.utils.Constants.REDIS_TIME
 import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
+import redis.clients.jedis.params.ScanParams
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.Base64
@@ -62,6 +63,44 @@ object RedisManager {
             return Json.decodeFromString(json)
         }
     }
+
+    fun deleteRecette(cacheKey: String){
+        try {
+            pool.resource.use { jedis ->
+                jedis.del(cacheKey)
+            }
+        } catch (e: Exception) {
+            // Gérer l'erreur
+        }
+    }
+
+
+    fun clearRecetteCache() {
+        deleteRecetteByPrefix(ADVANCED_KEY)
+        deleteRecetteByPrefix(ADVANCED_SIMPLE_KEY)
+    }
+
+    private fun deleteRecetteByPrefix(prefix: String) {
+        try {
+            pool.resource.use { jedis ->
+                // Utilisation de scan pour éviter le blocage
+                var cursor = "0"
+                do {
+                    val scanResult = jedis.scan(cursor, ScanParams().match("$prefix*").count(100))
+                    cursor = scanResult.cursor
+
+                    val keys = scanResult.result
+                    if (keys.isNotEmpty()) {
+                        jedis.del(*keys.toTypedArray())
+                    }
+                } while (cursor != "0")
+            }
+        } catch (e: Exception) {
+            println("Erreur lors de la suppression des clés Redis avec le préfixe '$prefix' : ${e.message}")
+        }
+    }
+
+
     fun cacheFilterSearch(
         cacheKey: String,
         results: RecettesSearsh,

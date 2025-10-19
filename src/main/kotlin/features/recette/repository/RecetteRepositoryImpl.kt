@@ -16,6 +16,8 @@ import cm.daccvo.utils.getTime
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
 import org.bson.Document
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class RecetteRepositoryImpl : RecetteRepository {
 
@@ -45,7 +47,7 @@ class RecetteRepositoryImpl : RecetteRepository {
 
             if(recetteDocument.insertOne(recetteDoc.toDocument()).wasAcknowledged()){
                 searchEngine.bulkIndex(listOf(recetteDoc))
-                redisCache.clearCache()
+                redisCache.clearRecetteCache()
                 ChefConnectResponse(true,"Recette enregistrer avec success")
             } else {
                 ChefConnectResponse(false,"Échec de l'enregistrement")
@@ -106,7 +108,8 @@ class RecetteRepositoryImpl : RecetteRepository {
 
                 val recette = recetteDocument.find(eq("uuid", uuid)).firstOrNull()
                 recette?.let { Recette.fromDocument(it) }?.let { searchEngine.bulkIndex(listOf(it)) }
-                redisCache.clearCache()
+                redisCache.clearRecetteCache()
+                redisCache.deleteRecette(uuid)
                 ChefConnectResponse(true,"Recette update avec success")
             } else {
                 ChefConnectResponse(false,"Échec de l'update")
@@ -125,7 +128,7 @@ class RecetteRepositoryImpl : RecetteRepository {
 
             if(recetteDocument.deleteOne(eq("uuid", uuid)).wasAcknowledged()) {
                 searchEngine.deleteRecetteByUuid(uuid)
-                redisCache.clearCache()
+                redisCache.clearRecetteCache()
                 ChefConnectResponse(true,"Recette update avec success")
             } else {
                 ChefConnectResponse(false,"Échec de la suppression")
@@ -212,7 +215,7 @@ class RecetteRepositoryImpl : RecetteRepository {
 
             avisDocument.insertOne(avis.toDocument())
             calculAvis(uuidRecette)
-            redisCache.clearCache()
+            redisCache.deleteRecette(uuidRecette)
             ChefConnectResponse(success = true , message = "avis enregistrer")
         } catch (e: Exception) {
             ChefConnectResponse(success = false , message = "${e.message}")
@@ -238,15 +241,17 @@ class RecetteRepositoryImpl : RecetteRepository {
     }
 
     private fun getReviewsComment(uuidRecette: String): List<Review> {
-        // Récupère tous les avis de la recette ou du lieu
         val avis = avisDocument.find(eq("uuidRecette", uuidRecette)).toList()
-
-        // Convertit en objets Review
         val avisList = avis.map { Review.fromDocument(it) }
 
-        // Filtre ceux qui ont un commentaire non nul et non vide
-        return avisList.filter { !it.comment.isNullOrBlank() }
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        // Filtrer et trier par date décroissante (les plus récents en premier)
+        return avisList
+            .filter { !it.comment.isNullOrBlank() }
+            .sortedByDescending { LocalDateTime.parse(it.createdAt, formatter) }
     }
+
 
 
     private fun existingRecette(uuid : String) : Document? {
