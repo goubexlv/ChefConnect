@@ -1,6 +1,7 @@
 package cm.daccvo.config
 
 import cm.daccvo.utils.Constants.AUTH_COLLECTION
+import cm.daccvo.utils.Constants.AVIS_COLLECTION
 import cm.daccvo.utils.Constants.DATABASE_NAME
 import cm.daccvo.utils.Constants.MAX_POOL_SIZE
 import cm.daccvo.utils.Constants.MONGO_HOST
@@ -18,7 +19,7 @@ object MongoDbManager {
     private val database: MongoDatabase
     val users: MongoCollection<Document>
     val recette : MongoCollection<Document>
-    //internal val passwordResetTokens: MongoCollection<Document>
+    val avisMongo: MongoCollection<Document>
 
     init {
         val credentials =
@@ -31,6 +32,8 @@ object MongoDbManager {
         database = mongoClient.getDatabase(DATABASE_NAME)
         users = database.getCollection(AUTH_COLLECTION)
         recette = database.getCollection(RECETTE_COLLECTION)
+        avisMongo = database.getCollection(AVIS_COLLECTION)
+
 
     }
 }

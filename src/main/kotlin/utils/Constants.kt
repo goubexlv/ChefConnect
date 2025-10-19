@@ -15,6 +15,7 @@ object Constants {
     val DATABASE_NAME: String = dotenv["MONGO_DB"]
     val AUTH_COLLECTION: String = dotenv["MONGO_AUTH_COLLECTION"]
     val RECETTE_COLLECTION: String = dotenv["MONGO_RECETTE_COLLECTION"]
+    val AVIS_COLLECTION: String = dotenv["MONGO_AVIS_COLLECTION"]
 
     // Variable token JWT
     val JWT_AUDIENCE: String? = dotenv["JWT_AUDIENCE"]

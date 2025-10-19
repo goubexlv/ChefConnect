@@ -24,8 +24,9 @@ data class Recette(
     val difficulty : Difficulty,
     val ingredients : List<Ingredient>,
     val instruction : String,
-    val createdAt: String = getTime(),
-    val updatedAt: String = getTime(),
+    val rating: Double = 0.0,
+    val createdAt: String = "",
+    val updatedAt: String = "",
 ){
     fun toDocument(): Document = Document.parse(Json.encodeToString(this))
 

@@ -3,9 +3,12 @@ package cm.daccvo.config
 import cm.daccvo.domain.dto.recette.RecettesSearsh
 import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
+import cm.daccvo.domain.recette.RecetteDocument
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.ElasticsearchException
 import co.elastic.clients.elasticsearch._types.Refresh
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType
@@ -18,93 +21,144 @@ class SearchEngine(private val client: ElasticsearchClient) {
     companion object {
         private const val INDEX_NAME = "recettes"
         private val INDEX_SETTINGS = """
-               {
-                  "settings": {
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0,
-                    "analysis": {
-                      "analyzer": {
-                        "standard_analyzer": { "type": "standard" },
-                        "suggest_analyzer": {
-                          "type": "custom",
-                          "tokenizer": "standard",
-                          "filter": ["lowercase", "asciifolding"]
-                        }
-                      }
-                    }
-                  },
-                  "mappings": {
-                    "properties": {
-                      "id": { "type": "keyword" },
-                      "uuid": { "type": "keyword" },
-                      
-                      "title": {
-                        "type": "text",
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "standard_analyzer": { "type": "standard" },
+        "suggest_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": { "type": "keyword" },
+      "uuid": { "type": "keyword" },
+      
+      "title": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": { "type": "keyword" }
+        }
+      },
+      "title_suggest": {
+        "type": "completion",
+        "analyzer": "suggest_analyzer",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
+      },
+      
+      "description": {
+             "type": "text",
+             "analyzer": "standard",
+             "fields": {
+               "keyword": {
+               "type": "keyword"
+                }
+             }
+           },
+      "imagePath": { "type": "keyword" },
+      
+      "category":
+           {
+             "type": "text",
+             "analyzer": "standard",
+             "fields": {
+               "keyword": {
+               "type": "keyword"
+                }
+             }
+           },
+      
+      "prepaTimes": { "type": "text", "analyzer": "standard" },
+      "cookTime": {
+             "type": "text",
+             "analyzer": "standard",
+             "fields": {
+               "keyword": {
+               "type": "keyword"
+                }
+             }
+           },
+      
+      "serving": {
+             "type": "text",
+             "analyzer": "standard",
+             "fields": {
+               "keyword": {
+               "type": "keyword"
+                }
+             }
+           },
+      
+      "difficulty": {
+             "type": "text",
+             "analyzer": "standard",
+             "fields": {
+               "keyword": {
+               "type": "keyword"
+                }
+             }
+           },
+      
+      "ingredients": {
+        "type": "object",
+        "properties": {
+          "quantity": { "type": "text",
                         "analyzer": "standard",
                         "fields": {
-                          "keyword": { "type": "keyword" }
-                        }
-                      },
-                      "title_suggest": {
-                        "type": "completion",
-                        "analyzer": "suggest_analyzer"
-                      },
-                      
-                      "description": {
-                        "type": "text",
-                        "analyzer": "standard"
-                      },
-                      
-                      "imagePath": { "type": "keyword" },
-                      
-                      "category": {
-                        "type": "keyword"
-                      },
-                      
-                      "prepaTimes": { "type": "text", "analyzer": "standard" },
-                      "cookTime": { "type": "text", "analyzer": "standard" },
-                      "serving": { "type": "keyword" }{ "type": "text", "analyzer": "standard" },
-                      
-                      "difficulty": {
-                        "type": "keyword"
-                      },
-                      
-                      "ingredients": {
-                        "type": "nested",
-                        "properties": {
-                          "quantity": { "type": "keyword" },
-                          "unit": { "type": "keyword" },
-                          "name": {
-                            "type": "text",
-                            "analyzer": "standard",
-                            "fields": {
-                              "keyword": { "type": "keyword" }
-                            }
-                          },
-                          "name_suggest": {
-                            "type": "completion",
-                            "analyzer": "suggest_analyzer"
+                          "keyword": {
+                            "type": "keyword"
+                          }
+                        } 
+                        },
+          "unit": { "type": "text",
+                        "analyzer": "standard",
+                        "fields": {
+                          "keyword": {
+                            "type": "keyword"
                           }
                         }
-                      },
-                      
-                      "instruction": {
-                        "type": "text",
-                        "analyzer": "standard"
-                      },
-                      
-                      "created_at": {
-                        "type": "date",
-                        "format": "strict_date_optional_time||epoch_millis"
-                      },
-                      "updated_at": {
-                        "type": "date",
-                        "format": "strict_date_optional_time||epoch_millis"
-                      }
-                    }
-                  }
-                }       
-            """.trimIndent()
+                         },
+          "name":{
+              "type": "text",
+              "analyzer": "standard",
+              "fields": {
+              "keyword": {
+              "type": "keyword"
+             }
+            }
+          },
+          "name_suggest": {
+            "type": "completion",
+            "analyzer": "suggest_analyzer"
+          }
+        }
+      },
+      
+      "instruction": { "type": "text", "analyzer": "standard" },
+      
+      "created_at": {
+        "type": "date",
+        "format": "strict_date_optional_time||epoch_millis"
+      },
+      "updated_at": {
+        "type": "date",
+        "format": "strict_date_optional_time||epoch_millis"
+      }
+    }
+  }
+}
+""".trimIndent()
+
 
     }
 
@@ -158,12 +212,12 @@ class SearchEngine(private val client: ElasticsearchClient) {
             }
 
             val bulkOperations = recettes.map { recette ->
-
+                val recetteDoc = RecetteDocument.fromRecette(recette)
                 BulkOperation.Builder()
                     .index { io ->
                         io.index(INDEX_NAME)
                             .id(recette.id)
-                            .document(recette.toDocument())
+                            .document(recetteDoc)
                     }
                     .build()
             }
@@ -249,19 +303,20 @@ class SearchEngine(private val client: ElasticsearchClient) {
         }
     }
 
+
     suspend fun searchAdvanced(request: SearchRequest): RecettesSearsh {
         return try {
             val searchRequest = filterSearch(request)
-            val response = client.search(searchRequest, Recette::class.java)
+            val response = client.search(searchRequest, RecetteDocument::class.java)
 
             println("Nombre de résultats trouvés: ${response.hits().total()?.value()}")
 
-            val results = response.hits().hits().mapNotNull { it.source() }
+            val results = response.hits().hits().mapNotNull { hit -> hit.source()?.toRecette() }
             println("Résultats recettes retournés: ${results.size}")
 
             val suggestions = extractSuggestionsFromResponse(response)
 
-            RecettesSearsh(recettes = results, suggestions = suggestions, size = request.size, page = request.page)
+            RecettesSearsh(recettes = results, suggestions = suggestions, size = results.size, page = request.page)
         } catch (e: Exception) {
             println("Advanced search failed ${e.message}")
             RecettesSearsh(emptyList(), emptyList())
@@ -275,7 +330,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
             .from((request.page - 1) * request.size)
             .size(request.size)
 
-        val hasSuggestionTerms = listOf(request.title, request.ingredient)
+        val hasSuggestionTerms = listOf(request.title, request.ingredient )
             .any { it?.isNotBlank() == true }
 
         if (hasSuggestionTerms) {
@@ -294,10 +349,21 @@ class SearchEngine(private val client: ElasticsearchClient) {
                 }
 
                 request.ingredient?.takeIf { it.isNotBlank() }?.let { ingredient ->
-                    suggester = suggester.suggesters("ingredient_suggest") { sug ->
+                    suggester = suggester.suggesters("name_suggest") { sug ->
                         sug.text(normalizeSearchTerm(ingredient))
                             .completion { c ->
                                 c.field("ingredients.name_suggest")
+                                    .skipDuplicates(true)
+                                    .size(5)
+                            }
+                    }
+                }
+
+                request.category?.takeIf { it.isNotBlank() }?.let { ingredient ->
+                    suggester = suggester.suggesters("ingredients_suggest") { sug ->
+                        sug.text(normalizeSearchTerm(ingredient))
+                            .completion { c ->
+                                c.field("ingredients_suggest")
                                     .skipDuplicates(true)
                                     .size(5)
                             }
@@ -312,71 +378,47 @@ class SearchEngine(private val client: ElasticsearchClient) {
     }
 
     private fun buildQuery(request: SearchRequest): Query {
-        val mustClauses = mutableListOf<Query>()
+        val boolQuery = BoolQuery.Builder()
 
-        // Recherche plein texte sur le titre
-        request.title?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.match { m -> m.field("title").query(it) }
-            }
-        }
+        // 🔍 Recherche plein texte sur le titre
+        request.title
+            ?.takeIf { it.isNotBlank() }
+            ?.let { title ->  boolQuery.must(buildFieldSpecificQuery("title", title)) }
 
-        // Recherche dans les ingrédients (nested)
-        request.ingredient?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.nested { n ->
-                    n.path("ingredients")
-                    n.query { nq ->
-                        nq.match { m -> m.field("ingredients.name").query(it) }
-                    }
-                }
-            }
-        }
+        // 🔍 Recherche dans les ingrédients (nested)
+        request.ingredient
+            ?.takeIf { it.isNotBlank() }
+            ?.let { ingredient -> boolQuery.must(buildFieldSpecificQuery("ingredients.name", ingredient)) }
 
-        // Catégorie exacte
-        request.category?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.term { t -> t.field("category").value(it) }
-            }
-        }
+        // 🎯 Filtres exacts
+        request.category
+            ?.takeIf { it.isNotBlank() }
+            ?.let { category -> boolQuery.must(buildFieldSpecificQuery("category", category)) }
 
-        // Difficulté exacte
-        request.difficulty?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.term { t -> t.field("difficulty").value(it) }
-            }
-        }
+        request.difficulty
+            ?.takeIf { it.isNotBlank() }
+            ?.let { difficulty -> boolQuery.must(buildFieldSpecificQuery("difficulty", difficulty)) }
 
-        // Temps de cuisson
-        request.cookTime?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.term { t -> t.field("cookTime").value(it) }
-            }
-        }
+        // ⏱️ Temps de cuisson (on le laisse en match si c’est textuel)
+        request.cookTime
+            ?.takeIf { it.isNotBlank() }
+            ?.let { cookTime -> boolQuery.must(buildFieldSpecificQuery("cookTime", cookTime)) }
 
-        // Nombre de portions
-        request.serving?.takeIf { it.isNotBlank() }?.let {
-            mustClauses += Query.of { q ->
-                q.term { t -> t.field("serving").value(it) }
-            }
-        }
+        // 🍽️ Nombre de portions
+        request.serving
+            ?.takeIf { it.isNotBlank() }
+            ?.let { serving -> boolQuery.must(buildFieldSpecificQuery("serving", serving)) }
 
-        return if (mustClauses.isEmpty()) {
-            Query.of { q -> q.matchAll { m -> m } }
-        } else {
-            Query.of { q ->
-                q.bool { b -> b.must(mustClauses) }
-            }
-        }
+        return Query.Builder().bool(boolQuery.build()).build()
     }
 
+
     private suspend fun extractSuggestionsFromResponse(
-        response: co.elastic.clients.elasticsearch.core.SearchResponse<Recette>
+        response: co.elastic.clients.elasticsearch.core.SearchResponse<RecetteDocument>
     ): List<Recette> {
         val suggestionTexts = mutableSetOf<String>()
 
-        // 1️⃣ Récupération des textes de suggestion
-        response.suggest()?.forEach { (_, suggestList) ->
+        response.suggest()?.forEach { (suggesterName, suggestList) ->
             suggestList.forEach { suggest ->
                 suggest.completion()?.options()?.forEach { option ->
                     suggestionTexts.add(option.text())
@@ -384,50 +426,68 @@ class SearchEngine(private val client: ElasticsearchClient) {
             }
         }
 
-        // 2️⃣ Si aucune suggestion, on renvoie une liste vide
         if (suggestionTexts.isEmpty()) return emptyList()
 
-        // 3️⃣ Création d'une requête booléenne pour rechercher les recettes correspondantes
-        val shouldQueries = suggestionTexts.map { text ->
-            Query.of { q ->
-                q.multiMatch { mm ->
-                    mm.query(text)
-                        .fields("title^3.0", "ingredients.name^2.0", "description")
-                        .fuzziness("AUTO")
+        return try {
+            val shouldQueries =
+                suggestionTexts.map { text ->
+                    Query.of { q ->
+                        q.multiMatch { multiMatch ->
+                            multiMatch
+                                .query(text)
+                                .fields(
+                                    "title^3.0",
+                                    "ingredients.name^3.0",
+                                    "description^2.5",
+                                )
+                                .operator(Operator.Or)
+                        }
+                    }
                 }
-            }
+
+            val response =
+                client.search(
+                    {
+                        it.index(INDEX_NAME)
+                            .query { q ->
+                                q.bool { bool ->
+                                    bool.should(shouldQueries)
+                                    bool.minimumShouldMatch("1")
+                                }
+                            }
+                            .size(suggestionTexts.size * 2)
+                    },
+                    RecetteDocument::class.java,
+                )
+
+            response
+                .hits()
+                .hits()
+                .mapNotNull { hit -> hit.source()?.toRecette() }
+                .distinctBy { it.uuid }
+                .take(4)
+        } catch (e: Exception) {
+            emptyList()
         }
-
-        val query = Query.of { q -> q.bool { b -> b.should(shouldQueries) } }
-
-        // 4️⃣ Recherche des recettes correspondant aux suggestions
-        val searchReq = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
-            .index(INDEX_NAME)
-            .query(query)
-            .size(suggestionTexts.size)
-            .build()
-
-        val resp = client.search(searchReq, Recette::class.java)
-        return resp.hits().hits().mapNotNull { it.source() }.distinctBy { it.id }
     }
+
 
 
     suspend fun simpleSearch(request: SearchRequest): RecettesSearsh {
         return try {
             val searchRequest = simpleSearchRequest(request)
-            val response = client.search(searchRequest, Recette::class.java)
+            val response = client.search(searchRequest, RecetteDocument::class.java)
 
             println("Nombre de résultats trouvés: ${response.hits().total()?.value()}")
 
-            val results: List<Recette> = response.hits().hits().mapNotNull { it.source() }
+            val results = response.hits().hits().mapNotNull { it.source()?.toRecette() }
             println("Résultats recettes retournés: ${results.size}")
 
-            val suggestions = extractSuggestionsFromBlurResponse(response, request)
+            val suggestions = extractSuggestionsFromBlurResponse(response)
 
-            RecettesSearsh(recettes = results, suggestions = suggestions, size = request.size, page = request.page)
+            RecettesSearsh(recettes = results, suggestions = suggestions, size = results.size, page = request.page)
         } catch (e: Exception) {
-            System.err.println("Simple search failed: ${e.message}")
-            e.printStackTrace()
+            println("Simple search failed: ${e.message}")
             RecettesSearsh(emptyList(), emptyList())
         }
     }
@@ -437,7 +497,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
             .index(INDEX_NAME)
             .query(buildQueryBlur(request))
             .from((request.page - 1) * request.size)
-            .size(if (request.size == -1) 1000 else request.size)
+            .size(request.size)
             .suggest { s ->
                 s.suggesters("title_suggest") { suggester ->
                     suggester.text(request.title)
@@ -446,7 +506,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
                                 .skipDuplicates(true)
                                 .size(5)
                         }
-                }.suggesters("ingredient_suggest") { suggester ->
+                }.suggesters("name_suggest") { suggester ->
                     suggester.text(request.title)
                         .completion { c ->
                             c.field("ingredients.name_suggest")
@@ -459,8 +519,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
     }
 
     private suspend fun extractSuggestionsFromBlurResponse(
-        response: co.elastic.clients.elasticsearch.core.SearchResponse<Recette>,
-        request: SearchRequest,
+        response: co.elastic.clients.elasticsearch.core.SearchResponse<RecetteDocument>
     ): List<Recette> {
         val suggestionTexts = mutableSetOf<String>()
 
@@ -472,27 +531,55 @@ class SearchEngine(private val client: ElasticsearchClient) {
             }
         }
 
-        return getRecettesFromSuggestions(suggestionTexts.take(5).toList())
+        return getRecettesFromSuggestions(suggestionTexts.take(4).toList())
     }
-
 
     private suspend fun getRecettesFromSuggestions(suggestionTexts: List<String>): List<Recette> {
         if (suggestionTexts.isEmpty()) return emptyList()
 
-        val shouldQueries = suggestionTexts.map { text ->
-            Query.of { q -> q.matchPhrase { mp -> mp.field("title").query(text) } }
+        return try {
+            val shouldQueries =
+                suggestionTexts.map { text ->
+                    Query.of { q ->
+                        q.multiMatch { multiMatch ->
+                            multiMatch
+                                .query(text)
+                                .fields(
+                                    "title^4.0",
+                                    "description^3.0",
+                                    "description^2.5",
+                                    "instruction^2.0"
+
+                                    )
+                                .operator(Operator.Or)
+                        }
+                    }
+                }
+
+            val response =
+                client.search(
+                    {
+                        it.index(INDEX_NAME)
+                            .query { q ->
+                                q.bool { bool ->
+                                    bool.should(shouldQueries)
+                                    bool.minimumShouldMatch("1")
+                                }
+                            }
+                            .size(suggestionTexts.size * 2)
+                    },
+                    RecetteDocument::class.java,
+                )
+
+            response
+                .hits()
+                .hits()
+                .mapNotNull { hit -> hit.source()?.toRecette() }
+                .distinctBy { it.uuid }
+                .take(4)
+        } catch (e: Exception) {
+            emptyList()
         }
-
-        val query = Query.of { q -> q.bool { b -> b.should(shouldQueries) } }
-
-        val searchReq = co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
-            .index(INDEX_NAME)
-            .query(query)
-            .size(suggestionTexts.size)
-            .build()
-
-        val resp = client.search(searchReq, Recette::class.java)
-        return resp.hits().hits().mapNotNull { it.source() }.distinctBy { it.id }
     }
 
     private fun buildQueryBlur(request: SearchRequest): Query {
@@ -503,9 +590,7 @@ class SearchEngine(private val client: ElasticsearchClient) {
                     .fields(
                         listOf(
                             "title^4.0",
-                            "description^3.0",
-                            "ingredients.name^2.5",
-                            "instruction^1.0"
+                            "ingredients.name^2.0",
                         )
                     )
                     .fuzziness("AUTO")
@@ -515,9 +600,19 @@ class SearchEngine(private val client: ElasticsearchClient) {
             .build()
     }
 
+    private fun buildFieldSpecificQuery(fieldName: String, queryText: String): Query {
+        return Query.Builder()
+            .match { match ->
+                match.field(fieldName).query(queryText).fuzziness("AUTO").operator(Operator.And)
+            }
+            .build()
+    }
 
     private fun normalizeSearchTerm(term: String): String =
         term.trim().lowercase()
+
+
+
 
 
 }

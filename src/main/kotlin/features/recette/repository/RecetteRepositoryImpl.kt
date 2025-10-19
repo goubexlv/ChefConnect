@@ -7,16 +7,20 @@ import cm.daccvo.config.RedisManager.generateCacheKey
 import cm.daccvo.config.SearchEngine
 import cm.daccvo.domain.dto.ChefConnectResponse
 import cm.daccvo.domain.dto.recette.RecetteRequest
+import cm.daccvo.domain.dto.recette.RecetteResponse
 import cm.daccvo.domain.dto.recette.RecettesSearsh
 import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
+import cm.daccvo.domain.recette.Review
 import cm.daccvo.utils.getTime
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
 import org.bson.Document
 
 class RecetteRepositoryImpl : RecetteRepository {
 
     private val recetteDocument = MongoDbManager.recette
+    private val avisDocument = MongoDbManager.avisMongo
     private val elasticClient = ElasticsearchManager.createClient()
     private val searchEngine = SearchEngine(elasticClient)
     private val redisCache = RedisManager
@@ -34,7 +38,9 @@ class RecetteRepositoryImpl : RecetteRepository {
                 serving = recette.serving,
                 difficulty = recette.difficulty,
                 ingredients = recette.ingredients,
-                instruction = recette.instruction
+                instruction = recette.instruction,
+                createdAt = getTime(),
+                updatedAt = getTime()
             )
 
             if(recetteDocument.insertOne(recetteDoc.toDocument()).wasAcknowledged()){
@@ -52,7 +58,7 @@ class RecetteRepositoryImpl : RecetteRepository {
     }
 
     override suspend fun updateRecette(uuid: String, recette: RecetteRequest): ChefConnectResponse {
-        recetteDocument.find(eq("uuid", uuid)).firstOrNull()
+         recetteDocument.find(eq("uuid", uuid)).firstOrNull()
             ?: ChefConnectResponse(false,"Recette n'existe pas")
 
         return try {
@@ -82,8 +88,17 @@ class RecetteRepositoryImpl : RecetteRepository {
 
                 // Instructions
                 recette.instruction.takeIf { it.isNotBlank() }?.let { put("instruction", it) }
+                val filter = Filters.and(
+                    Filters.eq("uuid", uuid)
+                )
 
-                // Dates
+                val recet = recetteDocument.find(filter).firstOrNull()
+                if (recet != null){
+                    val ret = Recette.fromDocument(recet)
+                    // Dates
+                    put("createdAt",ret.createdAt )
+                }
+
                 put("updatedAt", getTime())
             }
 
@@ -121,13 +136,17 @@ class RecetteRepositoryImpl : RecetteRepository {
         }
     }
 
-    override suspend fun consultationRecette(uuid: String): Recette? {
+    override suspend fun consultationRecette(uuid: String): RecetteResponse? {
         val recette = recetteDocument.find(eq("uuid", uuid)).firstOrNull()
             ?: null
 
         return try {
             if (recette != null){
-                Recette.fromDocument(recette)
+                val comment = getReviewsComment(uuid)
+                RecetteResponse(
+                    recette = Recette.fromDocument(recette),
+                    commentaire = comment
+                )
             } else {
                 null
             }
@@ -165,6 +184,66 @@ class RecetteRepositoryImpl : RecetteRepository {
 
             return results
         }
+
+    }
+
+    override suspend fun addAvis(
+        uuidUser: String,
+        uuidRecette: String,
+        note: Int?,
+        comment: String?
+    ): ChefConnectResponse {
+        return try {
+            if (existingRecette(uuidRecette) == null){
+                ChefConnectResponse(success = false, message = "Le lieu n'existe pas")
+            }
+            val avis = Review(
+                uuidUser = uuidUser,
+                uuidRecette = uuidRecette,
+                rating = note ?: 0,
+                comment = comment
+            )
+
+            avisDocument.insertOne(avis.toDocument())
+            calculAvis(uuidRecette)
+            ChefConnectResponse(success = true , message = "avis enregistrer")
+        } catch (e: Exception) {
+            ChefConnectResponse(success = false , message = "${e.message}")
+        }
+    }
+
+    private fun calculAvis(uuidPlace: String) : Double {
+        val avis = avisDocument.find(eq("uuidRecette", uuidPlace)).toList()
+        val avisList = avis.map{ Review.fromDocument(it) }
+
+        val averageRating = if (avisList.isNotEmpty()) {
+            avisList.map { it.rating }.average()
+        } else {
+            0.0
+        }
+
+        recetteDocument.updateOne(
+            eq("uuid", uuidPlace),
+            Document("\$set", Document("rating", averageRating))
+        )
+
+        return averageRating
+    }
+
+    private fun getReviewsComment(uuidRecette: String): List<Review> {
+        // Récupère tous les avis de la recette ou du lieu
+        val avis = avisDocument.find(eq("uuidRecette", uuidRecette)).toList()
+
+        // Convertit en objets Review
+        val avisList = avis.map { Review.fromDocument(it) }
+
+        // Filtre ceux qui ont un commentaire non nul et non vide
+        return avisList.filter { !it.comment.isNullOrBlank() }
+    }
+
+
+    private fun existingRecette(uuid : String) : Document? {
+        return recetteDocument.find(eq("uuid", uuid)).firstOrNull()
 
     }
 
