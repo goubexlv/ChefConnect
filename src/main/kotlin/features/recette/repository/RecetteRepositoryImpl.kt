@@ -212,6 +212,7 @@ class RecetteRepositoryImpl : RecetteRepository {
 
             avisDocument.insertOne(avis.toDocument())
             calculAvis(uuidRecette)
+            redisCache.clearCache()
             ChefConnectResponse(success = true , message = "avis enregistrer")
         } catch (e: Exception) {
             ChefConnectResponse(success = false , message = "${e.message}")
