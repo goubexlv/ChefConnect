@@ -140,13 +140,19 @@ class RecetteRepositoryImpl : RecetteRepository {
         val recette = recetteDocument.find(eq("uuid", uuid)).firstOrNull()
             ?: null
 
+        val recetteCache = redisCache.getRecette(uuid)
+        if(recetteCache != null){
+            return recetteCache
+        }
         return try {
             if (recette != null){
                 val comment = getReviewsComment(uuid)
-                RecetteResponse(
+                val recetteResponse = RecetteResponse(
                     recette = Recette.fromDocument(recette),
                     commentaire = comment
                 )
+                redisCache.saveRecette(uuid,recetteResponse)
+                return recetteResponse
             } else {
                 null
             }

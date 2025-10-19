@@ -1,9 +1,11 @@
 package cm.daccvo.config
 
+import cm.daccvo.domain.dto.recette.RecetteResponse
 import cm.daccvo.domain.dto.recette.RecettesSearsh
 import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.utils.Constants.REDIS_HOST
 import cm.daccvo.utils.Constants.REDIS_PORT
+import cm.daccvo.utils.Constants.REDIS_TIME
 import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
@@ -42,6 +44,24 @@ object RedisManager {
         )
     }
 
+    fun saveRecette(cacheKey: String, recette : RecetteResponse){
+        try {
+            pool.resource.use { jedis ->
+                val json = Json.encodeToString(recette)
+                jedis.set(cacheKey,json)
+                jedis.expire(cacheKey, REDIS_TIME)
+            }
+        } catch (e: Exception) {
+            // Gérer l'erreur
+        }
+    }
+
+    fun getRecette(cacheKey: String) : RecetteResponse? {
+        pool.resource.use { jedis ->
+            val json = jedis.get(cacheKey) ?: return null
+            return Json.decodeFromString(json)
+        }
+    }
     fun cacheFilterSearch(
         cacheKey: String,
         results: RecettesSearsh,
