@@ -148,13 +148,13 @@ class RecetteRepositoryImpl : RecetteRepository {
             if(recetteDocument.deleteOne(eq("uuid", uuid)).wasAcknowledged()) {
                 searchEngine.deleteRecetteByUuid(uuid)
                 redisCache.clearRecetteCache()
-                ChefConnectResponse(true,"Recette update avec success")
+                ChefConnectResponse(true,"Recette supprimer avec success")
             } else {
                 ChefConnectResponse(false,"Échec de la suppression")
             }
 
         } catch (e : Exception) {
-            ChefConnectResponse(false,"Échec du update: ${e.message}")
+            ChefConnectResponse(false,"Échec de la suppression: ${e.message}")
         }
     }
 

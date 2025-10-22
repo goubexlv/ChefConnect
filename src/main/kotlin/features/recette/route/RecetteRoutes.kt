@@ -199,7 +199,7 @@ fun Route.recetteRoutes(recetteRepository: RecetteRepository) {
 
         }
 
-        get(Endpoint.AddAvis.path) {
+        post(Endpoint.AddAvis.path) {
             val uuidUser = call.request.queryParameters["uuidUser"]
             val uuidRecette = call.request.queryParameters["uuidRecette"]
             val rating = call.request.queryParameters["rating"]
@@ -209,7 +209,7 @@ fun Route.recetteRoutes(recetteRepository: RecetteRepository) {
 
             if (uuidUser.isNullOrBlank() || uuidRecette.isNullOrBlank()) {
                 call.respond(HttpStatusCode.BadRequest, "parametre manquant")
-                return@get
+                return@post
             }
 
             try {
