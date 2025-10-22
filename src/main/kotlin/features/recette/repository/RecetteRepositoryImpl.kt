@@ -1,6 +1,7 @@
 package cm.daccvo.features.recette.repository
 
 import cm.daccvo.config.ElasticsearchManager
+import cm.daccvo.config.MinioManager.updateFile
 import cm.daccvo.config.MongoDbManager
 import cm.daccvo.config.RedisManager
 import cm.daccvo.config.RedisManager.generateCacheKey
@@ -26,6 +27,23 @@ class RecetteRepositoryImpl : RecetteRepository {
     private val elasticClient = ElasticsearchManager.createClient()
     private val searchEngine = SearchEngine(elasticClient)
     private val redisCache = RedisManager
+
+    override suspend fun uploadFile(key: String,bytes: ByteArray,contentType: String): ChefConnectResponse {
+        return try {
+
+            val result = updateFile(key,bytes,contentType)
+
+            if (result != null)
+                ChefConnectResponse(success = true, message = result)
+            else
+                ChefConnectResponse(success = false, message = "impossible telecharger")
+        } catch (e : Exception){
+            ChefConnectResponse(
+                success = false,
+                message = "Erreur : ${e.message}"
+            )
+        }
+    }
 
     override suspend fun createRecette(uuidOwers : String,recette: RecetteRequest): ChefConnectResponse {
 

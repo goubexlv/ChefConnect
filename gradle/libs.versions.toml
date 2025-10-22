@@ -11,6 +11,8 @@ minio = "8.5.17"
 
 
 [libraries]
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version.ref = "elastic-version" }
 elastic-java = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic-version" }
 redis-clients = { module = "redis.clients:jedis", version.ref = "redis-version" }

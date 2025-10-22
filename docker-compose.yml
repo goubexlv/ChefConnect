@@ -16,7 +16,7 @@ services:
       - 9200:9200
       - 9300:9300
     volumes:
-      - ./elasticsearch_data:/usr/share/elasticsearch/data
+      - ./data/elasticsearch_data:/usr/share/elasticsearch/data
     deploy:
       resources:
         limits:
@@ -79,24 +79,22 @@ services:
       timeout: 20s
       retries: 3
 
-
-  chefconnect:
-    image: chefconnect:latest
-    container_name: chefconnect
-    restart: unless-stopped
-    ports:
-      - "8081:8080"
+  minio-setup:
+    image: minio/mc:latest
+    container_name: minio-setup
     depends_on:
-      redis:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    env_file:
-      - .env
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set chefconnect_minio http://minio:9000 minioadmin minioadmin123;
+      if ! /usr/bin/mc ls chefconnect_minio/chefconnect-files >/dev/null 2>&1; then
+      /usr/bin/mc mb chefconnect_minio/chefconnect-files;
+      fi;
+      /usr/bin/mc anonymous set public chefconnect_minio/chefconnect-files;
+      exit 0;
+      "
+
+
 
 
 

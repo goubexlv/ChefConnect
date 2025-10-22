@@ -10,6 +10,7 @@ sealed class Endpoint( val path : String){
 
     //route recette
     data object Recette : Endpoint(path = "/recette")
+    data object RecetteFile : Endpoint(path = "/upload")
     data object UpdateRecette : Endpoint(path = "/recette")
     data object DeleteRecette : Endpoint(path = "/recette")
     data object ConsulteRecette : Endpoint(path = "/recette")

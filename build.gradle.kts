@@ -19,6 +19,10 @@ dependencies {
     implementation(libs.elastic.rest.client)
     implementation(libs.elastic.java)
 
+    implementation("io.ktor:ktor-client-content-negotiation:2.1.10")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.1.10")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
     implementation(libs.ktor.server.rate.limiting)
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)

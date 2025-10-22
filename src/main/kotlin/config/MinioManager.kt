@@ -47,7 +47,7 @@ object MinioManager {
     fun updateFile(
         key: String,
         bytes: ByteArray,
-        contentType: String = "application/octet-stream"
+        contentType: String = "image/jpeg"
     ): String? {
         return try {
             val stream = ByteArrayInputStream(bytes)

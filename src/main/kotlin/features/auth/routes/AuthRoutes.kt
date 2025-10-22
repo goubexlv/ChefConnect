@@ -72,27 +72,13 @@ fun Route.authRoutes(authRepository: AuthRepository){
 
     post(Endpoint.RefreshToken.path) {
         val body = call.receive<Map<String, String>>()
-        val refreshToken = body["refresh_token"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing refresh_token")
+        val refreshToken = body["refreshToken"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing refresh_token")
 
         try {
             val tokens = refreshToken(refreshToken)
             call.respond(Token(tokens.accessToken, tokens.refreshToken))
         } catch (e: IllegalArgumentException) {
             call.respond(HttpStatusCode.Unauthorized, e.message ?: "Invalid refresh token")
-        }
-    }
-
-    authenticate{
-        get("/me") {
-            val principal = call.principal<JWTPrincipal>()
-            println(principal)
-            val email = principal?.payload?.getClaim("email")?.asString()
-            val userId = principal?.payload?.getClaim("uuid")?.asString()
-
-            call.respond(mapOf(
-                "userId" to userId,
-                "email" to email
-            ))
         }
     }
 

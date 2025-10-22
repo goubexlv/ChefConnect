@@ -11,7 +11,6 @@ data class RegisterRequest(
     val avatar : String = "",
     val password : String = "",
     val code : String = "",
-    val createdAt: Long = System.currentTimeMillis()
 ){
     fun toDocument(): Document = Document.parse(Json.encodeToString(this))
 
