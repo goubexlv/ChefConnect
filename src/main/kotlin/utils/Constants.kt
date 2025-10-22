@@ -6,6 +6,9 @@ val dotenv = dotenv()
 
 object Constants {
 
+    // moderation
+    val MODERATION_URL: String = dotenv["MODERATION_URL"]
+
     // Mongo
     val MONGO_USER: String = dotenv["MONGO_USER"]
     val MONGO_PASSWORD: String = dotenv["MONGO_PASSWORD"]

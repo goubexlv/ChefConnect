@@ -60,11 +60,9 @@ object MinioManager {
                         .contentType(contentType)
                         .build()
                 )
-                println("✅ Upload success: etag=${response.etag()}")
 
                 // URL publique permanente (sans signature)
                 val permanentUrl = "${MINIO_URL}/${MINIO_BUCKET}/${key}"
-                println("🌍 Permanent URL: $permanentUrl")
                 permanentUrl
             }
         } catch (e: Exception) {

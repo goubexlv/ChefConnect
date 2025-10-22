@@ -1,6 +1,8 @@
 package cm.daccvo.features.recette.route
 
+import cm.daccvo.config.ModerationManager
 import cm.daccvo.domain.Endpoint
+import cm.daccvo.domain.dto.ChefConnectResponse
 import cm.daccvo.domain.dto.recette.RecetteRequest
 import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
@@ -70,7 +72,7 @@ fun Route.recetteRoutes(recetteRepository: RecetteRepository) {
             if (!contentType!!.startsWith("image/")) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    mapOf("success" to false, "message" to "Seules les images sont autorisées (jpg, png, webp, etc.)")
+                    ChefConnectResponse(false, "Seules les images sont autorisées (jpg, png, webp, etc.)")
                 )
                 return@post
             }
@@ -82,7 +84,17 @@ fun Route.recetteRoutes(recetteRepository: RecetteRepository) {
             if (extension !in allowedExtensions) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    mapOf("success" to false, "message" to "Extension non autorisée : $extension")
+                    ChefConnectResponse(false, "Extension non autorisée : $extension")
+                )
+                return@post
+            }
+
+            val moderateur  = ModerationManager.moderateImage(fileBytes!!,contentType!!)
+
+            if (moderateur.is_nsfw) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ChefConnectResponse(false, "L’image semble contenir du contenu inapproprié. Merci de choisir une autre image.")
                 )
                 return@post
             }
