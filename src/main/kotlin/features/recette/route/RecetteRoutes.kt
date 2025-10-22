@@ -6,6 +6,9 @@ import cm.daccvo.domain.dto.recette.SearchRequest
 import cm.daccvo.domain.recette.Recette
 import cm.daccvo.features.recette.repository.RecetteRepository
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -16,16 +19,25 @@ import io.ktor.server.routing.put
 
 fun Route.recetteRoutes(recetteRepository: RecetteRepository) {
 
-    post(Endpoint.Recette.path){
 
-        val request = call.receive<RecetteRequest>()
+    authenticate {
+        post(Endpoint.Recette.path) {
 
-        val response = recetteRepository.createRecette(request)
-        if (response.success)
-            call.respond(HttpStatusCode.OK, response)
-        else
-            call.respond(HttpStatusCode.BadRequest, response)
+            val request = call.receive<RecetteRequest>()
+            val principal = call.principal<JWTPrincipal>()
 
+            val userUuid = principal?.payload?.getClaim("uuid")?.asString()
+            if (userUuid == null){
+                call.respond(HttpStatusCode.BadRequest, "erreur de l'uuid")
+            }
+
+            val response = recetteRepository.createRecette(userUuid.toString(),request)
+            if (response.success)
+                call.respond(HttpStatusCode.OK, response)
+            else
+                call.respond(HttpStatusCode.BadRequest, response)
+
+        }
     }
 
     put(Endpoint.UpdateRecette.path){

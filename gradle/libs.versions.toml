@@ -7,12 +7,14 @@ mongo = "4.10.2"
 redis-version = "5.0.0"
 dotenv-kotlin = "6.5.1"
 elastic-version = "8.8.1"
+minio = "8.5.17"
 
 
 [libraries]
 elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version.ref = "elastic-version" }
 elastic-java = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic-version" }
 redis-clients = { module = "redis.clients:jedis", version.ref = "redis-version" }
+minio-clients = { module = "io.minio:minio", version.ref = "minio" }
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv-kotlin" }
 ktor-server-rate-limiting = { module = "io.github.flaxoos:ktor-server-rate-limiting", version = "2.2.1" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }

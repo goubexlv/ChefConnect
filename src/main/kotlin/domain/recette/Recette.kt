@@ -14,6 +14,7 @@ data class Recette(
     @SerialName(value = "_id")
     val id: String = ObjectId().toHexString(),
     val uuid: String = UUID.randomUUID().toString(),
+    val uuidOwers: String = "",
     val title : String,
     val description : String,
     val imagePath : String,

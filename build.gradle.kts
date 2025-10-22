@@ -13,6 +13,7 @@ application {
 
 dependencies {
 
+    implementation(libs.minio.clients)
     implementation(libs.dotenv.kotlin)
     implementation(libs.redis.clients)
     implementation(libs.elastic.rest.client)

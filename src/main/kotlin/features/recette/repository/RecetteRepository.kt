@@ -9,7 +9,7 @@ import cm.daccvo.domain.recette.Recette
 
 interface RecetteRepository {
 
-    suspend fun createRecette(recette : RecetteRequest) : ChefConnectResponse
+    suspend fun createRecette(uuidOwers : String, recette : RecetteRequest) : ChefConnectResponse
 
     suspend fun updateRecette(uuid: String, recette: RecetteRequest) : ChefConnectResponse
 

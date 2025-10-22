@@ -24,6 +24,11 @@ object Constants {
     val JWT_ISSUER: String? = dotenv["JWT_ISSUER"]
     val JWT_SECRET: String? = dotenv["JWT_SECRET"]
 
+    //minio
+    val MINIO_URL: String = dotenv["MINIO_URL"]
+    val MINIO_USER: String = dotenv["MINIO_USER"]
+    val MINIO_PASSWORD: String = dotenv["MINIO_PASSWORD"]
+    val MINIO_BUCKET: String = dotenv["MINIO_BUCKET"]
 
     val ELASTIC_HOST: String = dotenv["ELASTIC_HOST"]
     val ELASTIC_PORT: Int = dotenv["ELASTIC_PORT"].toInt()

@@ -27,11 +27,12 @@ class RecetteRepositoryImpl : RecetteRepository {
     private val searchEngine = SearchEngine(elasticClient)
     private val redisCache = RedisManager
 
-    override suspend fun createRecette(recette: RecetteRequest): ChefConnectResponse {
+    override suspend fun createRecette(uuidOwers : String,recette: RecetteRequest): ChefConnectResponse {
 
         return try {
             val recetteDoc = Recette(
                 title = recette.title,
+                uuidOwers = uuidOwers,
                 description = recette.description,
                 imagePath = recette.imagePath,
                 category = recette.category,
