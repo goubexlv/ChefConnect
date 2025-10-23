@@ -16,34 +16,6 @@ object MinioManager {
         .credentials(MINIO_USER, MINIO_PASSWORD)
         .build()
 
-
-
-
-    fun makeBucketPublic() {
-        // Politique pour rendre le bucket public en lecture
-        val policy = """
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {"AWS": ["*"]},
-                "Action": ["s3:GetObject"],
-                "Resource": ["arn:aws:s3:::$MINIO_BUCKET/*"]
-            }
-        ]
-    }
-    """.trimIndent()
-
-        minioClient.setBucketPolicy(
-            SetBucketPolicyArgs.builder()
-                .bucket(MINIO_BUCKET)
-                .config(policy)
-                .build()
-        )
-        println("✅ Bucket $MINIO_BUCKET is now public")
-    }
-
     fun updateFile(
         key: String,
         bytes: ByteArray,
