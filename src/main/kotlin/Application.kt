@@ -1,6 +1,5 @@
 package cm.daccvo
 
-import cm.daccvo.config.MinioManager.makeBucketPublic
 import cm.daccvo.plugins.configureAdministration
 import cm.daccvo.plugins.configureFrameworks
 import cm.daccvo.plugins.configureHTTP
@@ -15,7 +14,6 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    //makeBucketPublic()
     configureAdministration()
     configureFrameworks()
     configureSerialization()
