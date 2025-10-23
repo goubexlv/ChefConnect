@@ -11,6 +11,11 @@ application {
     mainClass = "io.ktor.server.netty.EngineMain"
 }
 
+repositories {
+    mavenCentral()
+    maven { url = uri("https://packages.confluent.io/maven/") }
+}
+
 dependencies {
 
     implementation(libs.minio.clients)
