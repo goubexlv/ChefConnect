@@ -8,9 +8,9 @@ object Constants {
 
     // Fonction utilitaire pour charger une variable d'env avec fallback
     private fun env(name: String, default: String? = null): String =
-        dotenv[name]?.takeIf { it.isNotBlank() }
-            ?: System.getenv(name)?.takeIf { it.isNotBlank() }
-            ?: default
+        //dotenv[name]?.takeIf { it.isNotBlank() }
+            System.getenv(name)?.takeIf { it.isNotBlank() }
+            //?: default
             ?: throw IllegalStateException("Environment variable '$name' is missing")
 
     private fun envInt(name: String, default: Int? = null): Int =
