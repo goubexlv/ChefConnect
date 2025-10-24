@@ -28,7 +28,7 @@ object MongoDbManager {
             else ""
 
         val uri = "mongodb://$credentials$MONGO_HOST:$MONGO_PORT/?maxPoolSize=$MAX_POOL_SIZE&w=majority"
-        val mongoClient = MongoClients.create(uri)
+        val mongoClient = MongoClients.create(MONGO_HOST)
         database = mongoClient.getDatabase(DATABASE_NAME)
         users = database.getCollection(AUTH_COLLECTION)
         recette = database.getCollection(RECETTE_COLLECTION)

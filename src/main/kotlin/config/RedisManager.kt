@@ -12,6 +12,7 @@ import redis.clients.jedis.JedisPoolConfig
 import redis.clients.jedis.params.ScanParams
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.net.URI
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPInputStream
@@ -27,8 +28,9 @@ object RedisManager {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-
     private val pool: JedisPool by lazy {
+        val uri = URI.create(REDIS_HOST)
+
         JedisPool(
             JedisPoolConfig().apply {
                 maxTotal = 50
@@ -37,13 +39,13 @@ object RedisManager {
                 testOnBorrow = true
                 testOnReturn = true
             },
-            REDIS_HOST,
-            REDIS_PORT,
-            2000,
-            null,
-            0 // database
+            uri.host,
+            uri.port,
+            2000, // timeout
+            uri.userInfo?.substringAfter(":") // password (après le :)
         )
     }
+
 
     fun saveRecette(cacheKey: String, recette : RecetteResponse){
         try {

@@ -48,6 +48,7 @@ object Constants {
 
     // ElasticSearch
     val ELASTIC_HOST: String = env("ELASTIC_HOST")
+    val ELASTIC_APIKEY: String = env("ELASTIC_APIKEY")
     val ELASTIC_PORT: Int = envInt("ELASTIC_PORT", 9200)
     val ELASTIC_CHUNK: Int = envInt("ELASTIC_CHUNK", 500)
 
